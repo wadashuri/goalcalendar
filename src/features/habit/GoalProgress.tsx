@@ -29,10 +29,20 @@ export function GoalProgress({
   return (
     <View style={{ gap: 20 }}>
       <View style={styles.hero}>
-        <View style={[styles.stamp, { backgroundColor: `${habit.color}20` }]}>
-          <Ionicons name={habit.icon} size={52} color={habit.color} />
+        <View
+          style={[
+            styles.stamp,
+            {
+              backgroundColor: habit.icon ? `${habit.color}20` : habit.color,
+              borderRadius: habit.icon ? 30 : 44,
+            },
+          ]}
+        >
+          {habit.icon && (
+            <Ionicons name={habit.icon} size={52} color={habit.color} />
+          )}
         </View>
-        <Text style={styles.name}>{habit.name}</Text>
+        {habit.name !== "" && <Text style={styles.name}>{habit.name}</Text>}
         <Text style={styles.note}>
           {year}年{month}月の達成
         </Text>

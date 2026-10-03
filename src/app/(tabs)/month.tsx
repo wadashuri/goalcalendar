@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useHabits } from "../../features/habit/HabitProvider";
-import { monthlyProgress } from "../../features/habit/model";
+import { monthlyProgress, habitLabel } from "../../features/habit/model";
 import { currentMonthPrefix, daysInMonth } from "../../utils/date";
 import { HabitIconBadge } from "../../components/HabitIconBadge";
 import { colors } from "../../components/ui";
@@ -57,7 +57,7 @@ export default function MonthScreen() {
               key={habit.id}
               style={styles.card}
               accessibilityRole="button"
-              accessibilityLabel={`${habit.name}の詳細、今月${done}日達成`}
+              accessibilityLabel={`${habitLabel(habit)}の詳細、今月${done}日達成`}
               onPress={() =>
                 router.push({
                   pathname: "/goals/[id]",

@@ -6,7 +6,6 @@ import {
   validateMemoText,
   type Habit,
   type HabitColor,
-  type HabitIcon,
   type HabitLog,
   type HabitMemo,
 } from "../features/habit/model";
@@ -42,7 +41,7 @@ async function initialize() {
           habit.id,
           habit.name,
           habit.color,
-          habit.icon,
+          habit.icon ?? "",
           habit.sortOrder,
           habit.createdAt,
         );
@@ -70,7 +69,7 @@ function toHabit(row: {
   return {
     ...row,
     color: row.color as HabitColor,
-    icon: row.icon as HabitIcon,
+    icon: isHabitIcon(row.icon) ? row.icon : null,
   };
 }
 
@@ -91,16 +90,17 @@ export async function listHabits(): Promise<Habit[]> {
 export async function updateHabit(
   id: string,
   name: string,
-  icon: string,
+  icon: string | null,
 ): Promise<void> {
   const validName = validateHabitName(name);
-  if (!validName || !isHabitIcon(icon)) throw new Error("Invalid habit");
+  if (validName === null || (icon !== null && !isHabitIcon(icon)))
+    throw new Error("Invalid habit");
   await (
     await database()
   ).runAsync(
     "UPDATE habits SET name = ?, icon = ? WHERE id = ?",
     validName,
-    icon,
+    icon ?? "",
     id,
   );
 }

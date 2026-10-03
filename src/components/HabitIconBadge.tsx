@@ -23,7 +23,9 @@ export function HabitIconBadge({
         },
       ]}
     >
-      <Ionicons name={habit.icon} size={size * 0.55} color="#FFFFFF" />
+      {habit.icon && (
+        <Ionicons name={habit.icon} size={size * 0.55} color="#FFFFFF" />
+      )}
     </View>
   );
 }

@@ -16,6 +16,7 @@ import {
   HABIT_ICONS,
   MAX_HABIT_NAME_LENGTH,
   validateHabitName,
+  habitLabel,
   type Habit,
   type HabitIcon,
 } from "../../features/habit/model";
@@ -26,7 +27,7 @@ export default function SettingsScreen() {
   const { habits, updateHabit, ready, error: loadError, reload } = useHabits();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState<HabitIcon>(HABIT_ICONS[0]);
+  const [icon, setIcon] = useState<HabitIcon | null>(HABIT_ICONS[0]);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +52,8 @@ export default function SettingsScreen() {
 
   async function handleSave() {
     if (!ready || !editingId || pending.current) return;
-    if (!validName) {
-      setError("1〜20文字で入力してください。");
+    if (validName === null) {
+      setError("20文字以内で入力してください。名前は空欄でも保存できます。");
       return;
     }
     pending.current = true;
@@ -103,7 +104,7 @@ export default function SettingsScreen() {
               <Pressable
                 disabled={busy}
                 accessibilityRole="button"
-                accessibilityLabel={`${habit.name}を編集`}
+                accessibilityLabel={`${habitLabel(habit)}を編集`}
                 onPress={() => openEditForm(habit)}
                 style={styles.rowButton}
               >
@@ -140,7 +141,7 @@ export default function SettingsScreen() {
               value={name}
               onChangeText={setName}
               maxLength={MAX_HABIT_NAME_LENGTH}
-              placeholder="目標の名前"
+              placeholder="名前なしでもOK"
               style={styles.input}
             />
 
@@ -151,6 +152,19 @@ export default function SettingsScreen() {
               contentContainerStyle={styles.iconRow}
               keyboardShouldPersistTaps="handled"
             >
+              <Pressable
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel="スタンプなし"
+                accessibilityState={{ selected: icon === null }}
+                onPress={() => setIcon(null)}
+                style={[
+                  styles.iconOption,
+                  icon === null && styles.iconOptionSelected,
+                ]}
+              >
+                <Text style={{ fontSize: 12, color: colors.ink }}>なし</Text>
+              </Pressable>
               {HABIT_ICONS.map((i) => (
                 <Pressable
                   key={i}
@@ -182,12 +196,12 @@ export default function SettingsScreen() {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                disabled={!validName || busy}
+                disabled={validName === null || busy}
                 onPress={() => void handleSave()}
                 style={[
                   styles.formButton,
                   styles.saveButton,
-                  !validName && styles.saveButtonDisabled,
+                  validName === null && styles.saveButtonDisabled,
                 ]}
               >
                 <Text style={styles.saveButtonText}>保存</Text>

@@ -1,3 +1,4 @@
+import { habitLabel } from "../../features/habit/model";
 import { useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -41,7 +42,7 @@ function CalendarDayCell({
   hasMemo: boolean;
   isToday: boolean;
   color: string;
-  icon: HabitIcon;
+  icon: HabitIcon | null;
   rowHeight: `${number}%`;
   onTap: (date: string) => void;
   onLongPress: (date: string) => void;
@@ -80,7 +81,19 @@ function CalendarDayCell({
         >
           {day}
         </Text>
-        {isOn && <Ionicons name={icon} size={42} color={color} />}
+        {isOn &&
+          (icon ? (
+            <Ionicons name={icon} size={42} color={color} />
+          ) : (
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: color,
+              }}
+            />
+          ))}
         {isToday && (
           <View style={[styles.todayDot, { backgroundColor: color }]} />
         )}
@@ -205,7 +218,7 @@ export default function CalendarScreen() {
         {habits.map((habit) => (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={habit.name}
+            accessibilityLabel={habitLabel(habit)}
             accessibilityState={{ selected: habit.id === activeHabitId }}
             key={habit.id}
             onPress={() => setSelectedHabitId(habit.id)}
@@ -214,13 +227,25 @@ export default function CalendarScreen() {
               habit.id === activeHabitId && { borderBottomColor: habit.color },
             ]}
           >
-            <Ionicons
-              name={habit.icon}
-              size={28}
-              color={
-                habit.id === activeHabitId ? habit.color : `${habit.color}88`
-              }
-            />
+            {habit.icon ? (
+              <Ionicons
+                name={habit.icon}
+                size={28}
+                color={
+                  habit.id === activeHabitId ? habit.color : `${habit.color}88`
+                }
+              />
+            ) : (
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: habit.color,
+                  opacity: habit.id === activeHabitId ? 1 : 0.4,
+                }}
+              />
+            )}
           </Pressable>
         ))}
       </View>

@@ -1,3 +1,4 @@
+import { habitLabel } from "../../features/habit/model";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -50,7 +51,7 @@ function GoalStamp({
   return (
     <Pressable
       accessibilityRole="checkbox"
-      accessibilityLabel={goal.name}
+      accessibilityLabel={habitLabel(goal)}
       accessibilityState={{ checked, busy, disabled: busy }}
       disabled={busy}
       onPressIn={() => animate(0.86)}
@@ -58,13 +59,26 @@ function GoalStamp({
       onPress={() => void stamp()}
       style={[styles.cell, checked && { backgroundColor: `${goal.color}18` }]}
     >
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Ionicons
-          name={goal.icon}
-          size={48}
-          color={checked ? goal.color : "#CFC9C1"}
+      {goal.icon ? (
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <Ionicons
+            name={goal.icon}
+            size={48}
+            color={checked ? goal.color : "#CFC9C1"}
+          />
+        </Animated.View>
+      ) : (
+        <Animated.View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: goal.color,
+            opacity: checked ? 1 : 0.4,
+            transform: [{ scale }],
+          }}
         />
-      </Animated.View>
+      )}
       <Text
         style={[
           styles.name,

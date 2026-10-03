@@ -4,12 +4,11 @@
     "slug": "goalcalendar",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/cat-calendar-icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.slaboratory.goalcalendar.app",
-      "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -27,7 +26,10 @@
     "scheme": "goalcalendar",
     "platforms": ["ios"],
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "37c20f07-10f8-4f37-9d34-03a02e3ee96d"
+      }
     },
     "owner": "shuri0108"
   }

@@ -1,3 +1,4 @@
+import { habitLabel } from "../../features/habit/model";
 import { useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,15 +52,15 @@ export default function GoalDetailScreen() {
         result: "tmpfile",
       });
       if (Platform.OS === "ios") {
-        const text = `${habit.name}、${year}年${month}月は${monthlyHistory(onDates[habit.id] ?? [], year)[month - 1]?.done ?? 0}日達成！\n${APP_NAME}でポチッと記録。${APP_LP_URL ? `\n${APP_LP_URL}` : ""}`;
+        const text = `${habitLabel(habit)}、${year}年${month}月は${monthlyHistory(onDates[habit.id] ?? [], year)[month - 1]?.done ?? 0}日達成！\n${APP_NAME}でポチッと記録。${APP_LP_URL ? `\n${APP_LP_URL}` : ""}`;
         await Share.share(
           { url: uri, message: text },
-          { subject: `${habit.name}の達成記録` },
+          { subject: `${habitLabel(habit)}の達成記録` },
         );
       } else {
         await Sharing.shareAsync(uri, {
           mimeType: "image/png",
-          dialogTitle: `${habit.name}の達成を共有`,
+          dialogTitle: `${habitLabel(habit)}の達成を共有`,
         });
       }
     } catch {

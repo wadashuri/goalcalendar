@@ -15,7 +15,7 @@ type State = {
   ready: boolean;
   error: string | null;
   reload: () => Promise<void>;
-  updateHabit: (id: string, name: string, icon: string) => Promise<void>;
+  updateHabit: (id: string, name: string, icon: string | null) => Promise<void>;
   isOn: (habitId: string, date: string) => boolean;
   toggleLog: (habitId: string, date: string) => Promise<void>;
   getMemo: (habitId: string, date: string) => HabitMemo | undefined;
@@ -52,7 +52,7 @@ export function HabitProvider({ children }: { children: ReactNode }) {
     // 非同期の読み込み完了で状態を更新する。レンダー中には更新しない。
     void Promise.resolve().then(reload);
   }, [reload]);
-  async function updateHabit(id: string, name: string, icon: string) {
+  async function updateHabit(id: string, name: string, icon: string | null) {
     await db.updateHabit(id, name, icon);
     setHabits(await db.listHabits());
   }

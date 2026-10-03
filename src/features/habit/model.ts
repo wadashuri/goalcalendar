@@ -122,9 +122,14 @@ export interface Habit {
   id: string;
   name: string;
   color: HabitColor;
-  icon: HabitIcon;
+  icon: HabitIcon | null;
   sortOrder: number;
   createdAt: number;
+}
+
+// 名前なしでも読み上げ・共有文で目標を識別できる。
+export function habitLabel(habit: Pick<Habit, "name" | "sortOrder">): string {
+  return habit.name || `目標${habit.sortOrder + 1}`;
 }
 
 export interface HabitLog {
@@ -148,13 +153,13 @@ export function isHabitColor(color: string): color is HabitColor {
   return (HABIT_COLORS as readonly string[]).includes(color);
 }
 
-export function isHabitIcon(icon: string): icon is HabitIcon {
-  return (HABIT_ICONS as readonly string[]).includes(icon);
+export function isHabitIcon(icon: string | null): icon is HabitIcon {
+  return icon !== null && (HABIT_ICONS as readonly string[]).includes(icon);
 }
 
 export function validateHabitName(name: string): string | null {
   const trimmed = name.trim();
-  if (trimmed.length < 1 || trimmed.length > MAX_HABIT_NAME_LENGTH) return null;
+  if (trimmed.length > MAX_HABIT_NAME_LENGTH) return null;
   return trimmed;
 }
 

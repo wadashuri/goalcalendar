@@ -99,6 +99,26 @@ export async function createHabit(
   return habit;
 }
 
+export async function updateHabit(
+  id: string,
+  name: string,
+  color: string,
+  icon: string,
+): Promise<void> {
+  const validName = validateHabitName(name);
+  if (!validName || !isHabitColor(color) || !isHabitIcon(icon))
+    throw new Error("Invalid habit");
+  await (
+    await database()
+  ).runAsync(
+    "UPDATE habits SET name = ?, color = ?, icon = ? WHERE id = ?",
+    validName,
+    color,
+    icon,
+    id,
+  );
+}
+
 export async function deleteHabit(id: string): Promise<void> {
   const db = await database();
   await db.runAsync("DELETE FROM habits WHERE id = ?", id);

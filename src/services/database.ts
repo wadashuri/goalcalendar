@@ -149,6 +149,15 @@ export async function listLogsForHabit(habitId: string): Promise<HabitLog[]> {
   return rows.map((row) => ({ ...row, isOn: row.isOn === 1 }));
 }
 
+export async function listAllOnLogs(): Promise<HabitLog[]> {
+  const rows = await (
+    await database()
+  ).getAllAsync<{ habitId: string; date: string; isOn: number }>(
+    "SELECT * FROM habit_logs WHERE isOn = 1",
+  );
+  return rows.map((row) => ({ ...row, isOn: row.isOn === 1 }));
+}
+
 export async function getHabitMemo(
   habitId: string,
   date: string,

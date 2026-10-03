@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "目標カレンダー",
+    "slug": "goalcalendar",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.slaboratory.goalcalendar.app",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router", "expo-status-bar"],
+    "scheme": "goalcalendar",
+    "platforms": ["ios"],
+    "extra": {
+      "router": {}
+    },
+    "owner": "shuri0108"
+  }
+}

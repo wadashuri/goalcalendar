@@ -83,3 +83,40 @@ export function validateMemoText(text: string): string | null {
   if (trimmed.length < 1 || trimmed.length > MAX_MEMO_LENGTH) return null;
   return trimmed;
 }
+
+export interface HighlightSegment {
+  text: string;
+  highlighted: boolean;
+}
+
+export function highlightSegments(
+  text: string,
+  query: string,
+): HighlightSegment[] {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [{ text, highlighted: false }];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = trimmedQuery.toLowerCase();
+  const segments: HighlightSegment[] = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const matchIndex = lowerText.indexOf(lowerQuery, cursor);
+    if (matchIndex === -1) {
+      segments.push({ text: text.slice(cursor), highlighted: false });
+      break;
+    }
+    if (matchIndex > cursor) {
+      segments.push({
+        text: text.slice(cursor, matchIndex),
+        highlighted: false,
+      });
+    }
+    const matchEnd = matchIndex + trimmedQuery.length;
+    segments.push({
+      text: text.slice(matchIndex, matchEnd),
+      highlighted: true,
+    });
+    cursor = matchEnd;
+  }
+  return segments;
+}

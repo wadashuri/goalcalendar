@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import {
-  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,31 +13,19 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "../../features/habit/HabitProvider";
 import {
-  HABIT_COLORS,
   HABIT_ICONS,
-  MAX_HABITS,
   MAX_HABIT_NAME_LENGTH,
   validateHabitName,
   type Habit,
-  type HabitColor,
   type HabitIcon,
 } from "../../features/habit/model";
 import { HabitIconBadge } from "../../components/HabitIconBadge";
 import { colors } from "../../components/ui";
 
 export default function SettingsScreen() {
-  const {
-    habits,
-    addHabit,
-    updateHabit,
-    removeHabit,
-    ready,
-    error: loadError,
-    reload,
-  } = useHabits();
+  const { habits, updateHabit, ready, error: loadError, reload } = useHabits();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [color, setColor] = useState<HabitColor>(HABIT_COLORS[0]);
   const [icon, setIcon] = useState<HabitIcon>(HABIT_ICONS[0]);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,80 +33,40 @@ export default function SettingsScreen() {
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
 
-  const atLimit = habits.length >= MAX_HABITS && editingId === null;
   const validName = validateHabitName(name);
-
-  function openAddForm() {
-    setEditingId(null);
-    setName("");
-    setColor(HABIT_COLORS[0]);
-    setIcon(HABIT_ICONS[0]);
-    setError(null);
-    setFormOpen(true);
-  }
 
   function openEditForm(habit: Habit) {
     setEditingId(habit.id);
     setName(habit.name);
-    setColor(habit.color);
     setIcon(habit.icon);
     setError(null);
     setFormOpen(true);
   }
 
   function closeForm() {
+    if (pending.current) return;
     setFormOpen(false);
     setEditingId(null);
   }
 
   async function handleSave() {
-    if (!ready || pending.current) return;
+    if (!ready || !editingId || pending.current) return;
     if (!validName) {
       setError("1〜20文字で入力してください。");
-      return;
-    }
-    if (atLimit) {
-      setError("登録上限は8件です。");
       return;
     }
     pending.current = true;
     setBusy(true);
     try {
-      if (editingId) {
-        await updateHabit(editingId, validName, color, icon);
-      } else {
-        await addHabit(validName, color, icon);
-      }
-      closeForm();
+      await updateHabit(editingId, validName, icon);
+      setFormOpen(false);
+      setEditingId(null);
     } catch {
       setError("保存できませんでした。もう一度お試しください。");
     } finally {
       pending.current = false;
       setBusy(false);
     }
-  }
-
-  function handleDelete(habit: Habit) {
-    Alert.alert("習慣を削除しますか？", habit.name, [
-      { text: "キャンセル", style: "cancel" },
-      {
-        text: "削除",
-        style: "destructive",
-        onPress: () => {
-          if (pending.current) return;
-          pending.current = true;
-          setBusy(true);
-          void removeHabit(habit.id)
-            .catch(() =>
-              Alert.alert("削除できませんでした", "もう一度お試しください。"),
-            )
-            .finally(() => {
-              pending.current = false;
-              setBusy(false);
-            });
-        },
-      },
-    ]);
   }
 
   if (!ready)
@@ -138,10 +88,12 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
     >
       <Text style={styles.title}>設定</Text>
-      <Text style={styles.text}>習慣の登録・編集・削除を行う画面です。</Text>
+      <Text style={styles.text}>
+        8個の目標の名前・スタンプを変更できます。色は固定です。
+      </Text>
 
       {habits.length === 0 ? (
-        <Text style={styles.empty}>まだ習慣が登録されていません。</Text>
+        <Text style={styles.empty}>まだ目標が登録されていません。</Text>
       ) : (
         <View style={styles.list}>
           {habits.map((habit) => (
@@ -151,6 +103,7 @@ export default function SettingsScreen() {
               <Pressable
                 disabled={busy}
                 accessibilityRole="button"
+                accessibilityLabel={`${habit.name}を編集`}
                 onPress={() => openEditForm(habit)}
                 style={styles.rowButton}
               >
@@ -160,112 +113,89 @@ export default function SettingsScreen() {
                   color={colors.muted}
                 />
               </Pressable>
-              <Pressable
-                disabled={busy}
-                accessibilityRole="button"
-                onPress={() => handleDelete(habit)}
-                style={styles.rowButton}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={20}
-                  color={colors.accentText}
-                />
-              </Pressable>
             </View>
           ))}
         </View>
       )}
 
-      {!formOpen &&
-        (atLimit ? (
-          <Text style={styles.limitText}>
-            登録上限（{MAX_HABITS}件）に達しています。
-          </Text>
-        ) : (
-          <Pressable
-            disabled={busy}
-            accessibilityRole="button"
-            onPress={openAddForm}
-            style={styles.addButton}
+      <Modal
+        visible={formOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={closeForm}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalBackdrop}
+        >
+          <ScrollView
+            style={styles.form}
+            contentContainerStyle={styles.formContent}
+            keyboardShouldPersistTaps="handled"
           >
-            <Ionicons name="add" size={18} color={colors.onAccent} />
-            <Text style={styles.addButtonText}>習慣を追加</Text>
-          </Pressable>
-        ))}
+            <Text style={styles.title}>目標を変更</Text>
+            <Text style={styles.formLabel}>名前</Text>
+            <TextInput
+              editable={!busy}
+              value={name}
+              onChangeText={setName}
+              maxLength={MAX_HABIT_NAME_LENGTH}
+              placeholder="目標の名前"
+              style={styles.input}
+            />
 
-      {formOpen && (
-        <View style={styles.form}>
-          <Text style={styles.formLabel}>名前</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            maxLength={MAX_HABIT_NAME_LENGTH}
-            placeholder="習慣の名前"
-            style={styles.input}
-          />
+            <Text style={styles.formLabel}>スタンプ（100種類）</Text>
+            <ScrollView
+              nestedScrollEnabled
+              style={styles.stampList}
+              contentContainerStyle={styles.iconRow}
+              keyboardShouldPersistTaps="handled"
+            >
+              {HABIT_ICONS.map((i) => (
+                <Pressable
+                  key={i}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`スタンプ ${HABIT_ICONS.indexOf(i) + 1}`}
+                  accessibilityState={{ selected: i === icon }}
+                  onPress={() => setIcon(i)}
+                  style={[
+                    styles.iconOption,
+                    i === icon && styles.iconOptionSelected,
+                  ]}
+                >
+                  <Ionicons name={i} size={20} color={colors.ink} />
+                </Pressable>
+              ))}
+            </ScrollView>
 
-          <Text style={styles.formLabel}>色</Text>
-          <View style={styles.swatchRow}>
-            {HABIT_COLORS.map((c) => (
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            <View style={styles.formButtons}>
               <Pressable
-                key={c}
                 disabled={busy}
                 accessibilityRole="button"
-                onPress={() => setColor(c)}
-                style={[
-                  styles.swatch,
-                  { backgroundColor: c },
-                  c === color && styles.swatchSelected,
-                ]}
-              />
-            ))}
-          </View>
-
-          <Text style={styles.formLabel}>アイコン</Text>
-          <View style={styles.iconRow}>
-            {HABIT_ICONS.map((i) => (
+                onPress={closeForm}
+                style={[styles.formButton, styles.cancelButton]}
+              >
+                <Text style={styles.cancelButtonText}>キャンセル</Text>
+              </Pressable>
               <Pressable
-                key={i}
-                disabled={busy}
                 accessibilityRole="button"
-                onPress={() => setIcon(i)}
+                disabled={!validName || busy}
+                onPress={() => void handleSave()}
                 style={[
-                  styles.iconOption,
-                  i === icon && styles.iconOptionSelected,
+                  styles.formButton,
+                  styles.saveButton,
+                  !validName && styles.saveButtonDisabled,
                 ]}
               >
-                <Ionicons name={i} size={20} color={colors.ink} />
+                <Text style={styles.saveButtonText}>保存</Text>
               </Pressable>
-            ))}
-          </View>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-
-          <View style={styles.formButtons}>
-            <Pressable
-              disabled={busy}
-              accessibilityRole="button"
-              onPress={closeForm}
-              style={[styles.formButton, styles.cancelButton]}
-            >
-              <Text style={styles.cancelButtonText}>キャンセル</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!validName || busy}
-              onPress={() => void handleSave()}
-              style={[
-                styles.formButton,
-                styles.saveButton,
-                !validName && styles.saveButtonDisabled,
-              ]}
-            >
-              <Text style={styles.saveButtonText}>保存</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
@@ -306,15 +236,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+  },
   form: {
-    marginTop: 16,
+    flexGrow: 0,
+    maxHeight: "100%",
     backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 14,
-    gap: 8,
   },
+  formContent: { padding: 20, gap: 12 },
   formLabel: {
     fontSize: 13,
     color: colors.muted,
@@ -333,10 +270,11 @@ const styles = StyleSheet.create({
   swatchRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   swatch: { width: 32, height: 32, borderRadius: 16 },
   swatchSelected: { borderWidth: 3, borderColor: colors.ink },
+  stampList: { maxHeight: 240 },
   iconRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   iconOption: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -349,7 +287,7 @@ const styles = StyleSheet.create({
   formButton: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderRadius: 10,
   },
   cancelButton: {

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import {
   HABIT_COLORS,
   HABIT_ICONS,
@@ -66,4 +67,22 @@ test("今月の進捗: 当月プレフィックスの日付だけを分子とし
     monthlyProgress(new Set(["2026-10-01", "2026-10-01"]), "2026-10", 31),
     { done: 1, total: 31 },
   );
+});
+
+test("スタンプは重複のない100種類で、すべて表示可能", () => {
+  const glyphs = JSON.parse(
+    readFileSync(
+      new URL(
+        "../node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/Ionicons.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(HABIT_ICONS.length, 100);
+  assert.equal(new Set(HABIT_ICONS).size, 100);
+  for (const icon of HABIT_ICONS) {
+    assert.equal(isHabitIcon(icon), true);
+    assert.equal(typeof glyphs[icon], "number");
+  }
 });

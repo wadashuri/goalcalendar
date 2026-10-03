@@ -1,3 +1,5 @@
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useHabits } from "../../features/habit/HabitProvider";
 import { monthlyProgress } from "../../features/habit/model";
@@ -26,9 +28,9 @@ export default function MonthScreen() {
   if (ready && habits.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>今月</Text>
+        <Text style={styles.title}>目標</Text>
         <Text style={styles.text}>
-          習慣が登録されていません。設定タブから習慣を追加してください。
+          目標が登録されていません。設定タブで目標を確認してください。
         </Text>
       </View>
     );
@@ -51,13 +53,29 @@ export default function MonthScreen() {
           );
           const ratio = total > 0 ? done / total : 0;
           return (
-            <View key={habit.id} style={styles.card}>
+            <Pressable
+              key={habit.id}
+              style={styles.card}
+              accessibilityRole="button"
+              accessibilityLabel={`${habit.name}の詳細、今月${done}日達成`}
+              onPress={() =>
+                router.push({
+                  pathname: "/goals/[id]",
+                  params: { id: habit.id },
+                })
+              }
+            >
               <View style={styles.cardHeader}>
                 <HabitIconBadge habit={habit} size={36} />
                 <Text style={styles.habitName}>{habit.name}</Text>
                 <Text style={styles.fraction}>
                   {done}/{total}日
                 </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.muted}
+                />
               </View>
               <View style={styles.barTrack}>
                 <View
@@ -70,7 +88,7 @@ export default function MonthScreen() {
                   ]}
                 />
               </View>
-            </View>
+            </Pressable>
           );
         })}
       </ScrollView>

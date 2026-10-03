@@ -15,14 +15,7 @@ type State = {
   ready: boolean;
   error: string | null;
   reload: () => Promise<void>;
-  addHabit: (name: string, color: string, icon: string) => Promise<void>;
-  updateHabit: (
-    id: string,
-    name: string,
-    color: string,
-    icon: string,
-  ) => Promise<void>;
-  removeHabit: (id: string) => Promise<void>;
+  updateHabit: (id: string, name: string, icon: string) => Promise<void>;
   isOn: (habitId: string, date: string) => boolean;
   toggleLog: (habitId: string, date: string) => Promise<void>;
   getMemo: (habitId: string, date: string) => HabitMemo | undefined;
@@ -59,22 +52,9 @@ export function HabitProvider({ children }: { children: ReactNode }) {
     // 非同期の読み込み完了で状態を更新する。レンダー中には更新しない。
     void Promise.resolve().then(reload);
   }, [reload]);
-  async function addHabit(name: string, color: string, icon: string) {
-    await db.createHabit(name, color, icon);
+  async function updateHabit(id: string, name: string, icon: string) {
+    await db.updateHabit(id, name, icon);
     setHabits(await db.listHabits());
-  }
-  async function updateHabit(
-    id: string,
-    name: string,
-    color: string,
-    icon: string,
-  ) {
-    await db.updateHabit(id, name, color, icon);
-    setHabits(await db.listHabits());
-  }
-  async function removeHabit(id: string) {
-    await db.deleteHabit(id);
-    await reload();
   }
   function isOn(habitId: string, date: string) {
     return onDates[habitId]?.has(date) ?? false;
@@ -113,9 +93,7 @@ export function HabitProvider({ children }: { children: ReactNode }) {
         ready,
         error,
         reload,
-        addHabit,
         updateHabit,
-        removeHabit,
         isOn,
         toggleLog,
         getMemo,

@@ -5,7 +5,6 @@ import {
   Platform,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,9 +13,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useHabits } from "../../features/habit/HabitProvider";
-import { MAX_MEMO_LENGTH, type Habit } from "../../features/habit/model";
+import {
+  MAX_MEMO_LENGTH,
+  type Habit,
+  type HabitIcon,
+} from "../../features/habit/model";
 import { datesInMonth, localDate } from "../../utils/date";
-import { HabitIconBadge } from "../../components/HabitIconBadge";
 import { colors } from "../../components/ui";
 
 const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -28,6 +30,8 @@ function CalendarDayCell({
   hasMemo,
   isToday,
   color,
+  icon,
+  rowHeight,
   onTap,
   onLongPress,
 }: {
@@ -37,6 +41,8 @@ function CalendarDayCell({
   hasMemo: boolean;
   isToday: boolean;
   color: string;
+  icon: HabitIcon;
+  rowHeight: `${number}%`;
   onTap: (date: string) => void;
   onLongPress: (date: string) => void;
 }) {
@@ -63,16 +69,23 @@ function CalendarDayCell({
   );
   return (
     <GestureDetector gesture={gesture}>
-      <View
-        style={[
-          styles.dayCell,
-          isOn && { backgroundColor: color },
-          isToday && styles.dayCellToday,
-        ]}
-      >
-        <Text style={[styles.dayText, isOn && styles.dayTextOn]}>{day}</Text>
+      <View style={[styles.dayCell, { height: rowHeight }]}>
+        <Text
+          style={[
+            styles.dayText,
+            { color },
+            isToday && styles.todayNumber,
+            isOn && styles.stampedDayNumber,
+          ]}
+        >
+          {day}
+        </Text>
+        {isOn && <Ionicons name={icon} size={42} color={color} />}
+        {isToday && (
+          <View style={[styles.todayDot, { backgroundColor: color }]} />
+        )}
         {hasMemo && (
-          <View style={[styles.memoDot, isOn && styles.memoDotOnBg]} />
+          <View style={[styles.memoDot, { backgroundColor: color }]} />
         )}
       </View>
     </GestureDetector>
@@ -114,6 +127,10 @@ export default function CalendarScreen() {
     [cursor],
   );
   const leadingBlanks = new Date(cursor.year, cursor.month - 1, 1).getDay();
+  const weekCount = Math.ceil((leadingBlanks + dates.length) / 7);
+  const trailingBlanks = weekCount * 7 - leadingBlanks - dates.length;
+  const rowHeight: `${number}%` = `${100 / weekCount}%`;
+  const calendarColor = activeHabit?.color ?? colors.accentText;
 
   function changeMonth(diff: number) {
     setCursor((prev) => {
@@ -176,7 +193,7 @@ export default function CalendarScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.emptyText}>
-          まだ習慣が登録されていません。設定タブから習慣を追加してください。
+          まだ目標が登録されていません。設定タブで目標を確認してください。
         </Text>
       </View>
     );
@@ -184,12 +201,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={{ flexGrow: 0 }}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.habitRow}
-      >
+      <View style={styles.habitRow}>
         {habits.map((habit) => (
           <Pressable
             accessibilityRole="button"
@@ -197,12 +209,24 @@ export default function CalendarScreen() {
             accessibilityState={{ selected: habit.id === activeHabitId }}
             key={habit.id}
             onPress={() => setSelectedHabitId(habit.id)}
-            style={styles.habitItem}
+            style={[
+              styles.habitItem,
+              habit.id === activeHabitId && { borderBottomColor: habit.color },
+            ]}
           >
-            <HabitIconBadge habit={habit} dimmed={habit.id !== activeHabitId} />
+            <Ionicons
+              name={habit.icon}
+              size={28}
+              color={
+                habit.id === activeHabitId ? habit.color : `${habit.color}88`
+              }
+            />
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
+      <Text style={[styles.yearLabel, { color: calendarColor }]}>
+        {cursor.year}
+      </Text>
 
       <View style={styles.monthHeader}>
         <Pressable
@@ -210,34 +234,40 @@ export default function CalendarScreen() {
           onPress={() => changeMonth(-1)}
           hitSlop={8}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.ink} />
+          <Ionicons name="chevron-back" size={28} color={calendarColor} />
         </Pressable>
-        <Text style={styles.monthLabel}>
-          {cursor.year}年{cursor.month}月
+        <Text
+          accessibilityLabel={`${cursor.year}年${cursor.month}月`}
+          style={[styles.monthLabel, { color: calendarColor }]}
+        >
+          {cursor.month}
         </Text>
         <Pressable
           accessibilityLabel="次の月"
           onPress={() => changeMonth(1)}
           hitSlop={8}
         >
-          <Ionicons name="chevron-forward" size={22} color={colors.ink} />
+          <Ionicons name="chevron-forward" size={28} color={calendarColor} />
         </Pressable>
       </View>
 
       <View style={styles.weekdayRow}>
         {WEEKDAY_LABELS.map((label) => (
-          <Text key={label} style={styles.weekdayLabel}>
+          <Text
+            key={label}
+            style={[styles.weekdayLabel, { color: calendarColor }]}
+          >
             {label}
           </Text>
         ))}
       </View>
 
-      <Text style={{ color: colors.muted }}>
-        {activeHabit?.name} · タップで記録、長押しでメモ
-      </Text>
       <View style={styles.grid}>
         {Array.from({ length: leadingBlanks }, (_, i) => (
-          <View key={`blank-${i}`} style={styles.dayCell} />
+          <View
+            key={`blank-${i}`}
+            style={[styles.dayCell, { height: rowHeight }]}
+          />
         ))}
         {activeHabit &&
           dates.map((date) => (
@@ -249,11 +279,22 @@ export default function CalendarScreen() {
               hasMemo={!!getMemo(activeHabit.id, date)}
               isToday={date === today}
               color={activeHabit.color}
+              icon={activeHabit.icon}
+              rowHeight={rowHeight}
               onTap={handleTap}
               onLongPress={handleLongPress}
             />
           ))}
+        {Array.from({ length: trailingBlanks }, (_, i) => (
+          <View
+            key={`trailing-${i}`}
+            style={[styles.dayCell, { height: rowHeight }]}
+          />
+        ))}
       </View>
+      <Text style={styles.helpText}>
+        {activeHabit?.name} · タップでスタンプ、長押しでメモ
+      </Text>
 
       <Modal
         visible={editingDate !== null}
@@ -312,7 +353,13 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: 16, gap: 12 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
   emptyText: {
     flex: 1,
     textAlign: "center",
@@ -321,42 +368,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 24,
   },
-  habitRow: { gap: 12, paddingVertical: 4 },
-  habitItem: { alignItems: "center" },
+  habitRow: { flexDirection: "row", paddingBottom: 8 },
+  habitItem: {
+    width: "12.5%",
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  yearLabel: { textAlign: "center", fontSize: 16, marginTop: 6 },
   monthHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 24,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  monthLabel: { fontSize: 16, fontWeight: "700", color: colors.ink },
-  weekdayRow: { flexDirection: "row" },
+  monthLabel: { fontSize: 44, fontWeight: "500" },
+  weekdayRow: { flexDirection: "row", paddingVertical: 12 },
   weekdayLabel: {
     width: "14.285714%",
     textAlign: "center",
-    fontSize: 12,
+    fontSize: 14,
     color: colors.muted,
   },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
+  grid: { flex: 1, flexDirection: "row", flexWrap: "wrap" },
   dayCell: {
     width: "14.285714%",
-    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
   },
-  dayCellToday: { borderWidth: 2, borderColor: colors.accentText },
-  dayText: { fontSize: 14, color: colors.ink },
-  dayTextOn: { color: colors.onAccent, fontWeight: "700" },
+  dayText: { fontSize: 20 },
+  todayNumber: { fontWeight: "800" },
+  stampedDayNumber: { position: "absolute", top: 8, right: 6, fontSize: 11 },
+  todayDot: {
+    position: "absolute",
+    bottom: 10,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  helpText: {
+    fontSize: 11,
+    color: colors.muted,
+    textAlign: "center",
+    paddingTop: 8,
+  },
   memoDot: {
     position: "absolute",
-    bottom: 4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    bottom: 10,
+    right: 5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.accentText,
   },
-  memoDotOnBg: { backgroundColor: colors.onAccent },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(58, 46, 34, 0.4)",

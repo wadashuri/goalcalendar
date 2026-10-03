@@ -83,3 +83,18 @@ export function validateMemoText(text: string): string | null {
   if (trimmed.length < 1 || trimmed.length > MAX_MEMO_LENGTH) return null;
   return trimmed;
 }
+
+export interface MonthlyProgress {
+  done: number;
+  total: number;
+}
+
+export function monthlyProgress(
+  onDates: Iterable<string>,
+  monthPrefix: string,
+  totalDaysInMonth: number,
+): MonthlyProgress {
+  let done = 0;
+  for (const date of onDates) if (date.startsWith(monthPrefix)) done += 1;
+  return { done, total: totalDaysInMonth };
+}

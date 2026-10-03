@@ -8,6 +8,7 @@ import {
   isHabitColor,
   isHabitIcon,
   isValidDateString,
+  monthlyProgress,
   nextSortOrder,
   validateHabitName,
   validateMemoText,
@@ -53,4 +54,16 @@ test("habit_memos: 空・201文字以上を拒否し、200文字までは許可"
   assert.equal(validateMemoText("   "), null);
   assert.equal(validateMemoText("あ".repeat(200)), "あ".repeat(200));
   assert.equal(validateMemoText("あ".repeat(201)), null);
+});
+
+test("今月の進捗: 当月プレフィックスの日付だけを分子として数える", () => {
+  assert.deepEqual(
+    monthlyProgress(["2026-10-01", "2026-10-15", "2026-09-30"], "2026-10", 31),
+    { done: 2, total: 31 },
+  );
+  assert.deepEqual(monthlyProgress([], "2026-10", 31), { done: 0, total: 31 });
+  assert.deepEqual(
+    monthlyProgress(new Set(["2026-10-01", "2026-10-01"]), "2026-10", 31),
+    { done: 1, total: 31 },
+  );
 });

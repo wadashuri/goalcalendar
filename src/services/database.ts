@@ -1,10 +1,7 @@
 import * as SQLite from "expo-sqlite";
 import {
-  canAddHabit,
-  isHabitColor,
   isHabitIcon,
   isValidDateString,
-  nextSortOrder,
   validateHabitName,
   validateMemoText,
   type Habit,
@@ -13,6 +10,8 @@ import {
   type HabitLog,
   type HabitMemo,
 } from "../features/habit/model";
+
+import { initialHabits } from "../features/habit/defaultHabits";
 
 let connection: Promise<SQLite.SQLiteDatabase> | undefined;
 
@@ -27,8 +26,30 @@ async function initialize() {
       PRIMARY KEY (habitId, date));
     CREATE TABLE IF NOT EXISTS habit_memos (
       habitId TEXT NOT NULL, date TEXT NOT NULL, text TEXT NOT NULL,
-      updatedAt INTEGER NOT NULL, PRIMARY KEY (habitId, date));
-    PRAGMA user_version = 1;`);
+      updatedAt INTEGER NOT NULL, PRIMARY KEY (habitId, date));`);
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    const version = await txn.getFirstAsync<{ user_version: number }>(
+      "PRAGMA user_version",
+    );
+    if (!version) throw new Error("Cannot read database version");
+    if (version.user_version < 3) {
+      const existing = await txn.getAllAsync<Habit>(
+        "SELECT * FROM habits ORDER BY sortOrder ASC",
+      );
+      for (const habit of initialHabits(existing, Date.now())) {
+        await txn.runAsync(
+          "INSERT INTO habits(id, name, color, icon, sortOrder, createdAt) VALUES(?, ?, ?, ?, ?, ?)",
+          habit.id,
+          habit.name,
+          habit.color,
+          habit.icon,
+          habit.sortOrder,
+          habit.createdAt,
+        );
+      }
+      await txn.execAsync("PRAGMA user_version = 3");
+    }
+  });
   return db;
 }
 function database() {
@@ -67,63 +88,21 @@ export async function listHabits(): Promise<Habit[]> {
   return rows.map(toHabit);
 }
 
-export async function createHabit(
-  name: string,
-  color: string,
-  icon: string,
-): Promise<Habit> {
-  const validName = validateHabitName(name);
-  if (!validName || !isHabitColor(color) || !isHabitIcon(icon))
-    throw new Error("Invalid habit");
-  const existing = await listHabits();
-  if (!canAddHabit(existing.length)) throw new Error("Too many habits");
-  const habit: Habit = {
-    id: `${Date.now()}`,
-    name: validName,
-    color,
-    icon,
-    sortOrder: nextSortOrder(existing),
-    createdAt: Date.now(),
-  };
-  await (
-    await database()
-  ).runAsync(
-    "INSERT INTO habits(id, name, color, icon, sortOrder, createdAt) VALUES(?, ?, ?, ?, ?, ?)",
-    habit.id,
-    habit.name,
-    habit.color,
-    habit.icon,
-    habit.sortOrder,
-    habit.createdAt,
-  );
-  return habit;
-}
-
 export async function updateHabit(
   id: string,
   name: string,
-  color: string,
   icon: string,
 ): Promise<void> {
   const validName = validateHabitName(name);
-  if (!validName || !isHabitColor(color) || !isHabitIcon(icon))
-    throw new Error("Invalid habit");
+  if (!validName || !isHabitIcon(icon)) throw new Error("Invalid habit");
   await (
     await database()
   ).runAsync(
-    "UPDATE habits SET name = ?, color = ?, icon = ? WHERE id = ?",
+    "UPDATE habits SET name = ?, icon = ? WHERE id = ?",
     validName,
-    color,
     icon,
     id,
   );
-}
-
-export async function deleteHabit(id: string): Promise<void> {
-  const db = await database();
-  await db.runAsync("DELETE FROM habits WHERE id = ?", id);
-  await db.runAsync("DELETE FROM habit_logs WHERE habitId = ?", id);
-  await db.runAsync("DELETE FROM habit_memos WHERE habitId = ?", id);
 }
 
 export async function getHabitLog(

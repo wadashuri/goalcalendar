@@ -18,7 +18,12 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-status-bar", "expo-sqlite"],
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite",
+      "expo-sharing"
+    ],
     "scheme": "goalcalendar",
     "platforms": ["ios"],
     "extra": {

@@ -97,7 +97,7 @@ export default function MemosScreen() {
                   {habit && <HabitIconBadge habit={habit} size={28} />}
                   <View style={styles.cardHeaderText}>
                     <HighlightedText
-                      text={habit?.name ?? "削除済みの習慣"}
+                      text={habit?.name ?? "削除済みの目標"}
                       query={query}
                       style={styles.habitName}
                     />

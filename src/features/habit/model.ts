@@ -120,3 +120,18 @@ export function highlightSegments(
   }
   return segments;
 }
+
+export interface MonthlyProgress {
+  done: number;
+  total: number;
+}
+
+export function monthlyProgress(
+  onDates: Iterable<string>,
+  monthPrefix: string,
+  totalDaysInMonth: number,
+): MonthlyProgress {
+  let done = 0;
+  for (const date of onDates) if (date.startsWith(monthPrefix)) done += 1;
+  return { done, total: totalDaysInMonth };
+}

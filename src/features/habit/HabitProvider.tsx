@@ -16,6 +16,12 @@ type State = {
   error: string | null;
   reload: () => Promise<void>;
   addHabit: (name: string, color: string, icon: string) => Promise<void>;
+  updateHabit: (
+    id: string,
+    name: string,
+    color: string,
+    icon: string,
+  ) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
   isOn: (habitId: string, date: string) => boolean;
   toggleLog: (habitId: string, date: string) => Promise<void>;
@@ -55,6 +61,15 @@ export function HabitProvider({ children }: { children: ReactNode }) {
   }, [reload]);
   async function addHabit(name: string, color: string, icon: string) {
     await db.createHabit(name, color, icon);
+    setHabits(await db.listHabits());
+  }
+  async function updateHabit(
+    id: string,
+    name: string,
+    color: string,
+    icon: string,
+  ) {
+    await db.updateHabit(id, name, color, icon);
     setHabits(await db.listHabits());
   }
   async function removeHabit(id: string) {
@@ -99,6 +114,7 @@ export function HabitProvider({ children }: { children: ReactNode }) {
         error,
         reload,
         addHabit,
+        updateHabit,
         removeHabit,
         isOn,
         toggleLog,
